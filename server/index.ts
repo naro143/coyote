@@ -18,11 +18,11 @@ class Player {
 }
 
 class Room {
-  id: string
+  name: string
   players: Array<Player>
 
-  constructor(id: string, player: Player) {
-    this.id = id
+  constructor(name: string, player: Player) {
+    this.name = name
     this.players = [player]
   }
 
@@ -44,7 +44,7 @@ app
     // ルーム一覧を取得
     server.get('/get-rooms', (req: Request, res: Response) => {
       console.log('body', req.body)
-      
+
       res.status(200).json({rooms: rooms})
     })
 
@@ -52,10 +52,15 @@ app
     server.post('/create-room', (req: Request, res: Response) => {
       console.log('body', req.body)
 
+      const room: Room = rooms.find(room => room.name == req.body.roomName)!
+
+      if(room != null) res.sendStatus(400)
+
       const newPlayer: Player = new Player(req.body.playerName)
-      const newRoomId: string = uuidv4()
-      const newRoom: Room = new Room(newRoomId, newPlayer)
-      
+      const newRoomName: string = req.body.roomName
+      const newRoom: Room = new Room(newRoomName, newPlayer)
+      rooms.push(newRoom)
+
       postIO(rooms)
       res.sendStatus(200)
     })
@@ -64,7 +69,7 @@ app
     server.post('/join-room', (req: Request, res: Response) => {
       console.log('body', req.body)
       
-      const room: Room = rooms.find(room => room.id == req.body.roomId)!
+      const room: Room = rooms.find(room => room.name == req.body.roomName)!
 
       if (room == null) res.sendStatus(400)
 
