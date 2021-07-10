@@ -52,8 +52,8 @@ app
     server.post('/create-room', (req: Request, res: Response) => {
       console.log('body', req.body)
 
+      // 同じ名前のルームが既にあるときはエラー
       const room: Room = rooms.find(room => room.name == req.body.roomName)!
-
       if(room != null) res.sendStatus(400)
 
       const newPlayer: Player = new Player(req.body.playerName)
@@ -69,9 +69,13 @@ app
     server.post('/join-room', (req: Request, res: Response) => {
       console.log('body', req.body)
       
+      // ルームが見つからないときはエラー
       const room: Room = rooms.find(room => room.name == req.body.roomName)!
-
       if (room == null) res.sendStatus(400)
+
+      // ルームに同じ名前のプレイヤーがいるときはエラー
+      const player: Player = room.players.find(player => player.name == req.body.playerName)!
+      if (player != null) res.sendStatus(400)
 
       const newPlayer: Player = new Player(req.body.playerName)
       room.joinPlayer(newPlayer)
