@@ -25,7 +25,11 @@ const Home = (props: ContainerProps) => {
         playerName,
       })
     }).then((response) => {
-      if (response.ok) console.log('ok')
+      if (response.ok) {
+        console.log('ok') 
+      } else {
+        console.log('error!') 
+      }
     }).catch((error) => {
       console.error(error)
     })

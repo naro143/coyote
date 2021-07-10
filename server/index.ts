@@ -1,8 +1,8 @@
-import express, { Request, Response } from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import {v4 as uuidv4} from 'uuid'
-import bodyParser from 'body-parser'
 import next from 'next'
 import socketio from "socket.io"
+import errorHandler, { badRequestException } from './errorException'
 
 const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev })
@@ -35,7 +35,7 @@ app
   .prepare()
   .then(() => {
     const server = express()
-    server.use(bodyParser())
+    server.use(express.json());
 
     // global state
     const rooms: Array<Room> = []
@@ -49,12 +49,14 @@ app
     })
 
     // ルームを作成
-    server.post('/create-room', (req: Request, res: Response) => {
+    server.post('/create-room', (req: Request, res: Response, next: NextFunction) => {
       console.log('body', req.body)
 
       // 同じ名前のルームが既にあるときはエラー
       const room: Room = rooms.find(room => room.name == req.body.roomName)!
-      if(room != null) res.sendStatus(400)
+      if(room != null) {
+        return next( badRequestException('同じ名前のルームが既に存在しています。別の名前でルームを作成してください。') )
+      }
 
       const newPlayer: Player = new Player(req.body.playerName)
       const newRoomName: string = req.body.roomName
@@ -66,16 +68,20 @@ app
     })
 
     // ルームに参加
-    server.post('/join-room', (req: Request, res: Response) => {
+    server.post('/join-room', (req: Request, res: Response, next: NextFunction) => {
       console.log('body', req.body)
       
       // ルームが見つからないときはエラー
       const room: Room = rooms.find(room => room.name == req.body.roomName)!
-      if (room == null) res.sendStatus(400)
+      if (room == null) {
+        return next( badRequestException('入力した名前のルームが見つかりません。') )
+      }
 
       // ルームに同じ名前のプレイヤーがいるときはエラー
       const player: Player = room.players.find(player => player.name == req.body.playerName)!
-      if (player != null) res.sendStatus(400)
+      if (player != null) {
+        return next( badRequestException('同じ名前のプレイヤーがルーム内に既に存在しています。別のプレイヤー名でルームに参加してください。') )
+      }
 
       const newPlayer: Player = new Player(req.body.playerName)
       room.joinPlayer(newPlayer)
@@ -87,6 +93,8 @@ app
     server.all('*', async (req: Request, res: Response) => {
       return handle(req, res)
     })
+
+    server.use(errorHandler)
 
     const httpServer = server.listen(port, (err?: any) => {
       if (err) throw err
