@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import styled from 'styled-components'
 import { Container, Box, InputBase, Button } from '@material-ui/core'
 import { Pets, MeetingRoom, PlusOne } from '@material-ui/icons'
+import { grey, red } from '@material-ui/core/colors'
 
 type ContainerProps = {}
 
@@ -10,11 +11,10 @@ const Home = (props: ContainerProps) => {
   const router = useRouter()
   const [roomName, setRoomName] = useState<string>('')
   const [playerName, setPlayerName] = useState<string>('')
+  const [errorMessage, setErrorMessage] = useState<string>('')
 
   const handleSubmit = async (action: string) => {
-
-
-    await fetch(location.href + `${action}-room`, {
+    const res = await fetch(location.href + `${action}-room`, {
       method: 'POST',
       mode: 'cors',
       headers: {
@@ -24,15 +24,16 @@ const Home = (props: ContainerProps) => {
         roomName,
         playerName,
       })
-    }).then((response) => {
-      if (response.ok) {
-        console.log('ok') 
-      } else {
-        console.log('error!') 
-      }
-    }).catch((error) => {
-      console.error(error)
     })
+    
+    if (res.ok) {
+      console.log('ok')
+      setErrorMessage('')
+    } else {
+      console.log('error!')
+      const res_json = await res.json()
+      setErrorMessage(res_json.message)
+    }
   }
 
   return (
@@ -43,6 +44,7 @@ const Home = (props: ContainerProps) => {
       playerName={playerName}
       setPlayerName={setPlayerName}
       handleSubmit={handleSubmit}
+      errorMessage={errorMessage}
     />
   )
 }
@@ -54,6 +56,7 @@ type Props = ContainerProps & {
   playerName: string
   setPlayerName: (value: string) => void
   handleSubmit: (action: string) => void
+  errorMessage: string
 }
 
 const Component = (props: Props) => (
@@ -61,7 +64,7 @@ const Component = (props: Props) => (
     <Box height="100vh" display="flex">
       <Box flexGrow={1} overflow="hidden" display="flex" flexDirection="column" justifyContent="center">
         <h1><Pets/>コヨーテ<Pets/></h1>
-        <Box display="flex" marginBottom={2} p={1} border={1} borderRadius={5} borderColor="grey.500">
+        <Box display="flex" marginBottom={2} p={1} border={1} borderRadius={5} borderColor={grey[500]}>
           <InputBase
             required
             placeholder="プレイヤー名を入力してください。"
@@ -70,7 +73,7 @@ const Component = (props: Props) => (
             fullWidth
           />
         </Box>
-        <Box display="flex" marginBottom={2} p={1} border={1} borderRadius={5} borderColor="grey.500">
+        <Box display="flex" marginBottom={2} p={1} border={1} borderRadius={5} borderColor={grey[500]}>
           <InputBase
             required
             placeholder="ルーム名を入力してください。"
@@ -108,6 +111,9 @@ const Component = (props: Props) => (
               ルームを作成する
             </Button>
           </Box>
+        </Box>
+        <Box display={props.errorMessage.length == 0 ? 'none' : 'block'} p={1} marginTop={2} color={red} bgcolor={red[100]} border={1} borderRadius={5} borderColor={red}>
+          {props.errorMessage}
         </Box>
       </Box>
     </Box>
