@@ -4,6 +4,7 @@ import styled from 'styled-components'
 import { Container, Box, InputBase, Button } from '@material-ui/core'
 import { Pets, MeetingRoom, PlusOne } from '@material-ui/icons'
 import { grey, red } from '@material-ui/core/colors'
+import { getClientRequestInstance } from 'utils/request'
 
 type ContainerProps = {}
 
@@ -14,26 +15,30 @@ const Home = (props: ContainerProps) => {
   const [errorMessage, setErrorMessage] = useState<string>('')
 
   const handleSubmit = async (action: string) => {
-    const res = await fetch(location.href + `${action}-room`, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    const request = getClientRequestInstance()
+
+    let endpoint: string
+    let body: any
+    if (action == 'create') {
+      endpoint = '/rooms'
+      body = {
         roomName,
-        playerName,
-      })
-    })
-    
-    if (res.ok) {
-      console.log('ok')
-      setErrorMessage('')
-    } else {
-      console.log('error!')
-      const res_json = await res.json()
-      setErrorMessage(res_json.message)
+        playerName
+      }
+    } else if (action == 'join') {
+      endpoint = `/rooms/${roomName}/players`
+      body = {
+        playerName
+      }
     }
+
+    await request.post(endpoint!, body)
+      .then((response) => {
+        // router.push('/room/')
+        setErrorMessage('')
+      }).catch((error) => {
+        setErrorMessage(error.response.data.message)
+      })
   }
 
   return (
