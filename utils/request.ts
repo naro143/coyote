@@ -1,7 +1,7 @@
 import axios from "axios"
 
-const serverSideBaseURL = `http://localhost:3000/server`
-const clientSideBaseURL = `http://localhost:3000/api`
+const serverSideBaseURL = `${process.env.NEXT_PUBLIC_HOST}/server`
+const clientSideBaseURL = `${process.env.NEXT_PUBLIC_HOST}/api`
 
 const serverRequestInstance = axios.create({
   baseURL: serverSideBaseURL,
