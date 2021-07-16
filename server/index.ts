@@ -78,7 +78,7 @@ app
       const newPlayer: Player = new Player(req.body.playerName)
       room.joinPlayer(newPlayer)
       
-      postIO(room)
+      postIO(room.players)
       res.sendStatus(201)
     })
 

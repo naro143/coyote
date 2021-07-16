@@ -34,9 +34,11 @@ const Home = (props: ContainerProps) => {
 
     await request.post(endpoint!, body)
       .then((response) => {
-        // router.push('/room/')
+        console.log('ok')
         setErrorMessage('')
+        router.push(`/room/${roomName}`)
       }).catch((error) => {
+        console.error('error!')
         setErrorMessage(error.response.data.message)
       })
   }
