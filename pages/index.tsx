@@ -36,7 +36,7 @@ const Home = (props: ContainerProps) => {
       .then((response) => {
         console.log('ok')
         setErrorMessage('')
-        router.push(`/room/${roomName}`)
+        router.push(`/room/${roomName}?playerName=${playerName}`)
       }).catch((error) => {
         console.error('error!')
         setErrorMessage(error.response.data.message)

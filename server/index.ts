@@ -38,7 +38,7 @@ app
         return next( badRequestException('同じ名前のルームが既に存在しています。別の名前でルームを作成してください。') )
       }
 
-      const newPlayer: Player = new Player(req.body.playerName)
+      const newPlayer: Player = new Player(req.body.playerName, null)
       const newRoomName: string = req.body.roomName
       const newRoom: Room = new Room(newRoomName, newPlayer)
       rooms.push(newRoom)
@@ -75,7 +75,7 @@ app
         return next( badRequestException('同じ名前のプレイヤーがルーム内に既に存在しています。別のプレイヤー名でルームに参加してください。') )
       }
 
-      const newPlayer: Player = new Player(req.body.playerName)
+      const newPlayer: Player = new Player(req.body.playerName, null)
       room.joinPlayer(newPlayer)
       
       postIO(room.players)
@@ -96,11 +96,27 @@ app
     const io = new socketio.Server(httpServer)
 
     io.on('connection', (socket: socketio.Socket) => {
-      console.log('id: ' + socket.id + ' is connected')
-    })
-    
-    io.on('disconnect', (socket: socketio.Socket) => {
-      console.log('id: ' + socket.id + ' is disconnected')
+      socket.on('setSocketId', (data) => {
+        const { roomName, playerName } = data
+
+        const room: Room = rooms.find(room => room.name == roomName)!
+        const player: Player = room.players.find(player => player.name == playerName)!
+        player.socketId = socket.id
+
+        console.log(`roomName: ${roomName}, playerName: ${playerName}, id: ${socket.id} is connected`)
+      })
+
+      socket.on('disconnect', () => {
+        for (let room of rooms) {
+          const playerIndex: number = room.players.findIndex(player => player.socketId == socket.id)
+          if (0 <= playerIndex) {
+            room.players.splice(playerIndex, 1)
+            postIO(room.players)
+            break
+          }
+        }
+        console.log('id: ' + socket.id + ' is disconnect')
+      })
     })
 
     // クライアントにデータを送信

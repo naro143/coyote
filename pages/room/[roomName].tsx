@@ -24,7 +24,7 @@ export async function getServerSideProps({ query }: {query: any}) {
 
 const Room = (props: ContainerProps) => {
   const router = useRouter()
-  const { roomName } = router.query
+  const { roomName, playerName } = router.query
   const [socket, _] = useState(() => io())
   const [isConnected, setIsConnected] = useState(false)
   const [players, setPlayers] = useState<PlayerType[]>(props.players)
@@ -32,6 +32,7 @@ const Room = (props: ContainerProps) => {
   useEffect(() => {
     socket.on('connect', () => {
       console.log('socket connected!!')
+      socket.emit('setSocketId', { roomName: roomName, playerName: playerName })
       setIsConnected(true)
     })
     socket.on('disconnect', () => {
