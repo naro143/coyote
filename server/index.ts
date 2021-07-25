@@ -43,7 +43,7 @@ app
       const newRoom: Room = new Room(newRoomName, newPlayer)
       rooms.push(newRoom)
 
-      postIO(rooms)
+      postIO(newRoomName ,rooms)
       res.status(201).json({room: newRoom})
     })
 
@@ -78,7 +78,7 @@ app
       const newPlayer: Player = new Player(req.body.playerName, null)
       room.joinPlayer(newPlayer)
       
-      postIO(room.players)
+      postIO(room.name, room.players)
       res.sendStatus(201)
     })
 
@@ -96,13 +96,20 @@ app
     const io = new socketio.Server(httpServer)
 
     io.on('connection', (socket: socketio.Socket) => {
-      socket.on('setSocketId', (data) => {
+      socket.on('init', (data) => {
         const { roomName, playerName } = data
 
-        const room: Room = rooms.find(room => room.name == roomName)!
-        const player: Player = room.players.find(player => player.name == playerName)!
-        player.socketId = socket.id
-
+        // TODO: retryにsleepを追加する
+        for (let retryCount = 0; retryCount < 3; retryCount++){
+          // playerとsocketIdを紐付ける
+          const room: Room = rooms.find(room => room.name == roomName)!
+          const player: Player = room.players.find(player => player.name == playerName)!
+          if (room != null && player != null) {
+            player.socketId = socket.id
+            socket.join(roomName)
+            break
+          }
+        }
         console.log(`roomName: ${roomName}, playerName: ${playerName}, id: ${socket.id} is connected`)
       })
 
@@ -110,8 +117,16 @@ app
         for (let room of rooms) {
           const playerIndex: number = room.players.findIndex(player => player.socketId == socket.id)
           if (0 <= playerIndex) {
+            // playerをroomから削除
             room.players.splice(playerIndex, 1)
-            postIO(room.players)
+            socket.leave(room.name)
+            // playerがいなくなったroomを削除
+            if (room.players.length == 0) {
+              const roomIndex: number = rooms.findIndex(r => r.name == room.name)
+              rooms.splice(roomIndex, 1)
+            } else {
+              postIO(room.name, room.players)
+            }
             break
           }
         }
@@ -120,8 +135,8 @@ app
     })
 
     // クライアントにデータを送信
-    const postIO = (data: any) => {
-      io.emit('update-data', data)
+    const postIO = (roomName: string, data: any) => {
+      io.to(roomName).emit('update-data', data)
     }
   })
   .catch((ex) => {

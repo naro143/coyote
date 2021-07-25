@@ -32,7 +32,7 @@ const Room = (props: ContainerProps) => {
   useEffect(() => {
     socket.on('connect', () => {
       console.log('socket connected!!')
-      socket.emit('setSocketId', { roomName: roomName, playerName: playerName })
+      socket.emit('init', { roomName: roomName, playerName: playerName })
       setIsConnected(true)
     })
     socket.on('disconnect', () => {
